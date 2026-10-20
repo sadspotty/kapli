@@ -27,14 +27,43 @@
     line-height:1.45;
     padding:12px;
     padding-bottom:calc(20px + env(safe-area-inset-bottom));
-    font-size:16px; /* чтобы iOS не зумил при фокусе */
+    font-size:16px;
   }
   .wrap{max-width:820px;margin:0 auto;}
 
   h1{font-size:1.3rem;margin:0 0 2px;letter-spacing:-0.02em;}
   .sub{color:var(--muted);font-size:.85rem;margin-bottom:14px;}
 
-  /* ---------- Блок с датой и кнопками ---------- */
+  /* ---------- Вкладки ---------- */
+  .tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    background:#e2e8f0;
+    padding:5px;
+    border-radius:14px;
+    margin-bottom:14px;
+  }
+  .tabs button{
+    padding:11px 10px;
+    border:none;
+    border-radius:10px;
+    background:transparent;
+    color:#4a5568;
+    font-size:.95rem;
+    font-weight:600;
+    cursor:pointer;
+    min-height:44px;
+    transition:background .15s,color .15s;
+  }
+  .tabs button.active{
+    background:#fff;
+    color:var(--accent);
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  .tabs button:active{transform:scale(.99);}
+
+  /* ---------- Блок с датой ---------- */
   .date-box{
     background:var(--card);
     border:1px solid var(--border);
@@ -85,7 +114,7 @@
   button.ghost{
     background:#e2e8f0;
     color:#2d3748;
-    grid-column:1 / -1; /* кнопка «Сегодня» на всю ширину */
+    grid-column:1 / -1;
   }
   button.ghost:active{background:#cbd5e0;}
 
@@ -129,7 +158,7 @@
     font-weight:700;
   }
 
-  /* ---------- Таблица → карточки на телефоне ---------- */
+  /* ---------- Таблица ---------- */
   .table-title{
     font-size:1.05rem;
     font-weight:700;
@@ -155,16 +184,13 @@
   tr.today-row{background:#fff8e1;}
   tr.today-row td{font-weight:700;}
 
-  /* На узких экранах (< 560px) таблица превращается в карточки */
   @media (max-width:560px){
     body{padding:10px;font-size:15px;}
     h1{font-size:1.15rem;}
 
-    /* кнопки — крупнее и удобнее */
     .controls{grid-template-columns:1fr 1fr;}
     button.ghost{grid-column:1 / -1;}
 
-    /* таблица в режиме карточек */
     table, thead, tbody, tr, td{display:block;}
     thead{display:none;}
     table{background:transparent;border-radius:0;overflow:visible;}
@@ -195,7 +221,6 @@
       text-align:left;
     }
     td.num{font-size:1.1rem;}
-    /* подписи-названия препаратов слева */
     td.num::before{
       content:attr(data-label);
       font-weight:500;
@@ -213,7 +238,13 @@
 <div class="wrap">
 
   <h1>💧 Капли для глаз</h1>
-  <div class="sub">Сигницеф · Дипред · Накван</div>
+  <div class="sub" id="subtitle">—</div>
+
+  <!-- ВКЛАДКИ -->
+  <div class="tabs" role="tablist">
+    <button id="tabRight" class="active" role="tab">👁 Правый глаз</button>
+    <button id="tabLeft" role="tab">👁 Левый глаз</button>
+  </div>
 
   <div class="date-box">
     <div class="today">
@@ -232,11 +263,8 @@
   <div class="table-title">📅 Таблица для сверки</div>
   <table id="tbl">
     <thead>
-      <tr>
+      <tr id="tblHead">
         <th>Дата</th>
-        <th>Сигницеф</th>
-        <th>Дипред</th>
-        <th>Накван</th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -250,29 +278,60 @@
 /* ================== ДАННЫЕ ==================
    Формат: [начало, конец, разВДень], даты включительно
 ============================================= */
-const MEDS = [
-  {
-    key:'signicef',
-    name:'Сигницеф',
-    sub:'Левофлоксацин',
-    periods:[ ['2026-10-14','2026-10-24',4] ]
-  },
-  {
-    key:'dipred',
-    name:'Дипред',
-    sub:'Дифлупреднат',
-    periods:[
-      ['2026-10-15','2026-10-29',4],
-      ['2026-10-30','2026-11-05',2]
+const EYES = {
+  right: {
+    label: 'Правый глаз',
+    meds: [
+      {
+        key:'signicef',
+        name:'Сигницеф',
+        sub:'Левофлоксацин',
+        periods:[ ['2026-10-14','2026-10-24',4] ]
+      },
+      {
+        key:'kosopt',
+        name:'Косопт',
+        sub:'Дорзоламид + Тимолол',
+        periods:[
+          ['2026-10-14','2026-10-29',2],
+          ['2026-10-30','2026-11-05',2]
+        ]
+      },
+      {
+        key:'nakvan',
+        name:'Накван',
+        sub:'Бромфенак',
+        periods:[ ['2026-10-14','2026-11-13',2] ]
+      }
     ]
   },
-  {
-    key:'nakvan',
-    name:'Накван',
-    sub:'Бромфенак',
-    periods:[ ['2026-10-14','2026-11-13',2] ]
+  left: {
+    label: 'Левый глаз',
+    meds: [
+      {
+        key:'signicef',
+        name:'Сигницеф',
+        sub:'Левофлоксацин',
+        periods:[ ['2026-10-20','2026-10-30',4] ]
+      },
+      {
+        key:'kosopt',
+        name:'Косопт',
+        sub:'Дорзоламид + Тимолол',
+        periods:[
+          ['2026-10-20','2026-11-04',2],
+          ['2026-11-05','2026-11-11',2]
+        ]
+      },
+      {
+        key:'diclofenac',
+        name:'Диклофенак',
+        sub:'НПВС',
+        periods:[ ['2026-10-20','2026-11-19',3] ]
+      }
+    ]
   }
-];
+};
 
 /* ================== УТИЛИТЫ ================== */
 function parseDate(str){
@@ -305,9 +364,9 @@ function doseFor(med, date){
   }
   return 0;
 }
-function allDays(){
+function allDays(meds){
   const set = new Set();
-  MEDS.forEach(med=>{
+  meds.forEach(med=>{
     med.periods.forEach(([s,e])=>{
       let cur = parseDate(s);
       const end = parseDate(e);
@@ -320,17 +379,25 @@ function allDays(){
   return [...set].sort().map(parseDate);
 }
 
+/* ================== СОСТОЯНИЕ ================== */
+let currentEye = 'right';
+let currentDate = new Date();
+currentDate.setHours(0,0,0,0);
+
 /* ================== ОТРИСОВКА ================== */
 function renderDay(date, isToday){
   const card = document.getElementById('dayCard');
+  const eye = EYES[currentEye];
   document.getElementById('shownDate').textContent = fmtHuman(date);
   document.getElementById('todayMark').textContent =
     isToday ? 'это сегодня' : 'выбранная дата';
+  document.getElementById('subtitle').textContent =
+    eye.meds.map(m=>m.name).join(' · ');
 
   let html = `<h2>${isToday ? 'Сегодня капаем:' : 'На эту дату:'}</h2>`;
   let any = false;
 
-  MEDS.forEach(med=>{
+  eye.meds.forEach(med=>{
     const n = doseFor(med, date);
     if(n > 0){
       any = true;
@@ -354,10 +421,18 @@ function renderDay(date, isToday){
   card.innerHTML = html;
 }
 
+function renderTableHead(){
+  const eye = EYES[currentEye];
+  const head = document.getElementById('tblHead');
+  head.innerHTML = '<th>Дата</th>' +
+    eye.meds.map(m=>`<th>${m.name}</th>`).join('');
+}
+
 function renderTable(todayDate){
   const tbody = document.getElementById('tbody');
+  const eye = EYES[currentEye];
   tbody.innerHTML = '';
-  const days = allDays();
+  const days = allDays(eye.meds);
   if(!days.length){
     tbody.innerHTML = '<tr><td colspan="4">Нет данных</td></tr>';
     return;
@@ -370,16 +445,15 @@ function renderTable(todayDate){
     const tr = document.createElement('tr');
     if(sameDay(cur, todayDate)) tr.classList.add('today-row');
 
-    // первая ячейка — дата
     const tdDate = document.createElement('td');
     tdDate.textContent = fmtHuman(cur);
     tr.appendChild(tdDate);
 
-    MEDS.forEach(med=>{
+    eye.meds.forEach(med=>{
       const n = doseFor(med, cur);
       const td = document.createElement('td');
       td.classList.add('num');
-      td.setAttribute('data-label', med.name); // для мобильных карточек
+      td.setAttribute('data-label', med.name);
       if(n > 0){
         td.textContent = String(n);
       } else {
@@ -398,11 +472,34 @@ function renderTable(todayDate){
 function update(date){
   const today = new Date();
   today.setHours(0,0,0,0);
-  date.setHours(0,0,0,0);
+  currentDate = new Date(date);
+  currentDate.setHours(0,0,0,0);
 
-  renderDay(date, sameDay(date, today));
+  renderDay(currentDate, sameDay(currentDate, today));
+  renderTableHead();
   renderTable(today);
-  document.getElementById('datePicker').value = fmtISO(date);
+  document.getElementById('datePicker').value = fmtISO(currentDate);
+  renderNote();
+}
+
+function renderNote(){
+  const eye = EYES[currentEye];
+  const parts = eye.meds.map(med=>{
+    const ps = med.periods.map(([s,e,n])=>{
+      const ds = parseDate(s), de = parseDate(e);
+      const f = d=>d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'});
+      return `${f(ds)}–${f(de)} (${n} р/д)`;
+    }).join(', ');
+    return `${med.name} ${ps}`;
+  });
+  document.getElementById('note').textContent = parts.join(' · ') + '.';
+}
+
+function switchEye(eyeKey){
+  currentEye = eyeKey;
+  document.getElementById('tabRight').classList.toggle('active', eyeKey==='right');
+  document.getElementById('tabLeft').classList.toggle('active', eyeKey==='left');
+  update(currentDate);
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -411,6 +508,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   today.setHours(0,0,0,0);
 
   update(today);
+
+  document.getElementById('tabRight').addEventListener('click', ()=>switchEye('right'));
+  document.getElementById('tabLeft').addEventListener('click', ()=>switchEye('left'));
 
   document.getElementById('showBtn').addEventListener('click', ()=>{
     if(!picker.value) return;
@@ -424,9 +524,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   picker.addEventListener('change', ()=>{
     if(picker.value) update(parseDate(picker.value));
   });
-
-  document.getElementById('note').textContent =
-    'Сигницеф 14.10–24.10 (4 р/д) · Дипред 15.10–29.10 (4 р/д), 30.10–05.11 (2 р/д) · Накван 14.10–13.11 (2 р/д).';
 });
 </script>
 </body>
